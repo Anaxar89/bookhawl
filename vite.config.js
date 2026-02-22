@@ -5,7 +5,7 @@ import { renameSync, existsSync } from 'fs'
 export default defineConfig({
   base: '/',
 
-  root: resolve(__dirname, 'src/pages'),
+  root: resolve(__dirname),
   publicDir: resolve(__dirname, 'public'),
 
   build: {
@@ -24,11 +24,11 @@ export default defineConfig({
     {
       name: 'rename-auth-to-index',
       closeBundle() {
-        const authPath  = resolve(__dirname, 'dist/auth.html')
-        const indexPath = resolve(__dirname, 'dist/index.html')
-        if (existsSync(authPath)) {
-          renameSync(authPath, indexPath)
-          console.log('✅ dist/auth.html → dist/index.html')
+        const from = resolve(__dirname, 'dist/src/pages/auth.html')
+        const to   = resolve(__dirname, 'dist/index.html')
+        if (existsSync(from)) {
+          renameSync(from, to)
+          console.log('✅ auth.html → dist/index.html')
         }
       }
     }
@@ -36,6 +36,6 @@ export default defineConfig({
 
   server: {
     port: 3000,
-    open: '/auth.html'
+    open: '/src/pages/auth.html'
   }
 })
