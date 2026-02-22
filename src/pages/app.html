@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BookHawl — La mia libreria</title>
+  <link rel="stylesheet" href="../styles/global.css">
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 12px;
+    }
+    h1 { font-family: 'Fredoka One', cursive; color: #f5a623; font-size: 2rem; }
+    p  { color: #7a8baa; }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <h1>🦉 BookHawl</h1>
+  <p>Sei loggato! La libreria è in arrivo...</p>
+  <button onclick="logout()" style="margin-top:16px; padding:10px 24px; background:#f5a623; border:none; border-radius:10px; font-weight:700; cursor:pointer;">Logout</button>
+  <script type="module">
+    import { getSession, signOut } from '../lib/auth.js'
+    const { session } = await getSession()
+    if (!session) window.location.href = '/src/pages/auth.html'
+    window.logout = async () => {
+      await signOut()
+      window.location.href = '/src/pages/auth.html'
+    }
+  </script>
+</body>
+</html>

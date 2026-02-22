@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080d1a">
+  <title>BookHawl</title>
+  <script>
+    // GitHub Pages SPA fallback
+    // Reindirizza alla root mantenendo il path originale come query param
+    const path = window.location.pathname
+    const repo = '/bookhawl' // stesso valore di base in vite.config.js
+    window.location.replace(repo + '/?redirect=' + encodeURIComponent(path))
+  </script>
+  <style>
+    body { margin:0; background:#080d1a; }
+  </style>
+</head>
+<body></body>
+</html>
