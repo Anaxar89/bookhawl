@@ -10,13 +10,30 @@ import {
   getSession
 } from '../lib/auth.js'
 
-const APP_URL = `${window.location.origin}/app.html`
+import { supabase } from '../lib/supabase.js'
 
-// 0. Già loggato → redirect
-;(async () => {
-  const { session } = await getSession()
-  if (session) window.location.href = APP_URL
-})()
+const APP_URL = '/app.html'
+
+async function initAuthRedirect() {
+  const { data: { session } } = await supabase.auth.getSession()
+
+  // Se già loggato → vai in app
+  if (session && !window.location.pathname.endsWith('app.html')) {
+    window.location.replace(APP_URL)
+    return
+  }
+
+  // Ascolta login OAuth
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      if (!window.location.pathname.endsWith('app.html')) {
+        window.location.replace(APP_URL)
+      }
+    }
+  })
+}
+
+initAuthRedirect()
 
 // 1. Stars
 generateStars(document.getElementById('starsContainer'), 85)
@@ -70,7 +87,14 @@ document.getElementById('form-login').addEventListener('submit', async (e) => {
     return
   }
   showToast('Benvenuto! 🦉', 'success')
-  setTimeout(() => { window.location.href = APP_URL }, 800)
+  if (!error) {
+    // aspetta che Supabase notifichi il login
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        window.location.replace('/app.html')
+      }
+    })
+  }
 })
 
 // 5. REGISTER

@@ -1,32 +1,26 @@
-/**
- * Toast notification utility
- */
+import owlOk from '../assets/owl-ok.png'
+import owlKo from '../assets/owl-ko.png'
 
 let toastEl = null
 let toastTimer = null
 
-/**
- * @param {string} message
- * @param {'error'|'success'|'info'} type
- * @param {number} duration ms
- */
 export function showToast(message, type = 'info', duration = 3500) {
   if (!toastEl) {
     toastEl = document.getElementById('toast')
   }
-
   if (!toastEl) return
 
-  // Clear previous timer
   if (toastTimer) clearTimeout(toastTimer)
 
-  // Reset classes
+  const owl = (type === 'error') ? owlKo : owlOk
+
   toastEl.className = `toast toast--${type}`
-  toastEl.textContent = message
+  toastEl.innerHTML = `
+    <img class="toast__owl" src="${owl}" alt="BookHawl owl">
+    <div class="toast__bubble">${message}</div>
+  `
 
-  // Force reflow to re-trigger animation if already visible
   void toastEl.offsetWidth
-
   toastEl.classList.add('is-visible')
 
   toastTimer = setTimeout(() => {

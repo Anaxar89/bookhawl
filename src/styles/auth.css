@@ -393,30 +393,83 @@
 /* ---- Toast ---- */
 .toast {
   position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%) translateY(-90px);
-  background: var(--color-deep);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-md);
-  padding: 12px 20px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  bottom: -20px;
+  right: 24px;
+  top: auto;
+  left: auto;
+  transform: translateY(120px);
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
   z-index: 9999;
-  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-  white-space: nowrap;
-  max-width: 90vw;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   pointer-events: none;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-width: 320px;
 }
 
 .toast.is-visible {
-  transform: translateX(-50%) translateY(0);
+  transform: translateY(0);
 }
 
-.toast--error   { border-color: rgba(224, 85, 85, 0.45);  color: #ff9898; }
-.toast--success { border-color: rgba(76, 170, 110, 0.45); color: #90ffc0; }
-.toast--info    { border-color: rgba(91, 158, 245, 0.45); color: #aad4ff; }
+.toast__owl {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+  mix-blend-mode: lighten;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+  animation: owlBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes owlBounce {
+  from { transform: translateY(20px) scale(0.8); opacity: 0; }
+  to   { transform: translateY(0)    scale(1);   opacity: 1; }
+}
+
+.toast__bubble {
+  position: relative;
+  background: var(--color-deep);
+  border: 1.5px solid var(--glass-border);
+  border-radius: 18px 18px 18px 4px;
+  padding: 12px 16px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.45;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+  margin-bottom: 70px;
+  margin-left: -4px;
+  animation: bubblePop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s both;
+  max-width: 220px;
+}
+
+/* codina del fumetto */
+.toast__bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: -10px;
+  width: 14px;
+  height: 14px;
+  background: var(--color-deep);
+  border-left: 1.5px solid var(--glass-border);
+  border-bottom: 1.5px solid var(--glass-border);
+  border-radius: 0 0 0 8px;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+
+@keyframes bubblePop {
+  from { transform: scale(0.85) translateX(10px); opacity: 0; }
+  to   { transform: scale(1)    translateX(0);    opacity: 1; }
+}
+
+.toast--error   .toast__bubble { border-color: rgba(224,85,85,0.5);   color: #ff9898; }
+.toast--success .toast__bubble { border-color: rgba(76,170,110,0.5);  color: #90ffc0; }
+.toast--info    .toast__bubble { border-color: rgba(91,158,245,0.5);  color: #aad4ff; }
+
+.toast--error   .toast__bubble::after { border-color: rgba(224,85,85,0.5); }
+.toast--success .toast__bubble::after { border-color: rgba(76,170,110,0.5); }
+.toast--info    .toast__bubble::after { border-color: rgba(91,158,245,0.5); }
 
 /* ---- Success Screen ---- */
 .success-screen {

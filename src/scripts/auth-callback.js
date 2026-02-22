@@ -1,23 +1,26 @@
 import { supabase } from '../lib/supabase.js'
 
 async function handleCallback() {
-  try {
-    const code = new URLSearchParams(window.location.search).get('code')
-    if (code) {
-      const { error } = await supabase.auth.exchangeCodeForSession(code)
-      if (error) throw error
-    }
+  // Aspetta che Supabase elabori il token nell’URL
+  const { data, error } = await supabase.auth.getSession()
 
-    const { data: { session }, error } = await supabase.auth.getSession()
-    if (error || !session) {
-      window.location.href = `${window.location.origin}/?confirmed=1`
-      return
-    }
-    window.location.href = `${window.location.origin}/app.html`
-  } catch (err) {
-    console.error('Auth callback error:', err)
-    window.location.href = `${window.location.origin}/?error=callback`
+  if (error) {
+    console.error(error)
+    window.location.replace('/')
+    return
   }
+
+  if (data.session) {
+    window.location.replace('/app.html')
+    return
+  }
+
+  // Se ancora non c'è sessione, ascolta il cambio stato
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      window.location.replace('/app.html')
+    }
+  })
 }
 
 handleCallback()

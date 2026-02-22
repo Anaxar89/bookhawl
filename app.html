@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080d1a">
+  <title>BookHawl — La mia libreria</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./src/styles/global.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      min-height: 100vh;
+      background:
+              radial-gradient(ellipse 80% 60% at 50% -10%, #1a2f5e 0%, transparent 70%),
+              radial-gradient(ellipse 60% 40% at 80% 100%, #2a1a08 0%, transparent 60%),
+              linear-gradient(180deg, #080d1a 0%, #0a1020 100%);
+      overflow-x: hidden;
+    }
+    .stars { position:fixed; inset:0; z-index:0; pointer-events:none; }
+    .star {
+      position:absolute; background:#fff; border-radius:50%;
+      animation:twinkle var(--dur,3s) ease-in-out infinite var(--delay,0s);
+    }
+    @keyframes twinkle { 0%,100%{opacity:var(--min,0.1)} 50%{opacity:var(--max,0.8)} }
+
+    .page {
+      position:relative; z-index:1;
+      max-width:1100px; margin:0 auto;
+      padding:28px 20px 60px;
+      display:flex; flex-direction:column; gap:24px;
+    }
+
+    /* Header */
+    .header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding-bottom:20px; border-bottom:1px solid rgba(245,166,35,0.2);
+    }
+    .header-logo { display:flex; align-items:center; gap:10px; }
+    .header-logo img {
+      width:48px; height:48px; object-fit:contain;
+      mix-blend-mode:lighten; filter:drop-shadow(0 0 8px rgba(245,166,35,0.4));
+    }
+    .header-title { font-family:var(--font-display); font-size:1.8rem; line-height:1; }
+    .header-title .book { color:var(--color-white); }
+    .header-title .hawl { color:var(--color-amber); }
+    .header-actions { display:flex; gap:10px; }
+
+    .btn-add {
+      display:flex; align-items:center; gap:6px; padding:10px 18px;
+      background:linear-gradient(135deg,var(--color-amber),var(--color-orange));
+      border:none; border-radius:var(--radius-md); color:#1a0d00;
+      font-weight:800; font-size:0.9rem; cursor:pointer;
+      box-shadow:0 4px 16px rgba(245,166,35,0.3); transition:opacity .15s,transform .15s;
+    }
+    .btn-add:active { transform:scale(0.97); opacity:0.9; }
+    .btn-logout {
+      padding:10px 16px; background:var(--glass-bg);
+      border:1px solid var(--glass-border); border-radius:var(--radius-md);
+      color:var(--color-muted); font-size:0.88rem; font-weight:600; cursor:pointer;
+      transition:border-color .15s,color .15s;
+    }
+    .btn-logout:hover { border-color:rgba(224,85,85,0.4); color:#ff9898; }
+
+    /* Search */
+    .search-wrap { position:relative; max-width:420px; }
+    .search-icon {
+      position:absolute; left:13px; top:50%; transform:translateY(-50%);
+      font-size:1rem; opacity:0.4; pointer-events:none;
+    }
+    .search-input {
+      width:100%; padding:12px 14px 12px 38px;
+      background:var(--glass-bg); border:1.5px solid var(--glass-border);
+      border-radius:var(--radius-md); color:var(--color-cream);
+      font-size:0.95rem; outline:none; transition:border-color .2s;
+    }
+    .search-input::placeholder { color:var(--color-muted); }
+    .search-input:focus { border-color:rgba(245,166,35,0.5); }
+
+    /* Stats */
+    .stats { display:flex; gap:10px; flex-wrap:wrap; }
+    .stat-pill {
+      background:var(--glass-bg); border:1px solid var(--glass-border);
+      border-radius:var(--radius-full); padding:5px 14px;
+      font-size:0.82rem; color:var(--color-muted);
+    }
+    .stat-pill strong { color:var(--color-amber-light); }
+
+    /* Grid */
+    .books-grid {
+      display:grid; grid-template-columns:repeat(auto-fill,minmax(155px,1fr)); gap:18px;
+    }
+    .book-card {
+      background:var(--glass-bg); border:1px solid var(--glass-border);
+      border-radius:var(--radius-lg); overflow:hidden; cursor:pointer;
+      transition:transform .2s,border-color .2s,box-shadow .2s;
+      animation:cardIn .3s ease both;
+    }
+    .book-card:hover {
+      transform:translateY(-6px); border-color:rgba(245,166,35,0.35);
+      box-shadow:0 16px 40px rgba(0,0,0,0.4);
+    }
+    @keyframes cardIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    .book-cover { width:100%; height:210px; object-fit:cover; display:block; background:var(--color-navy); }
+    .book-cover-placeholder {
+      width:100%; height:210px;
+      background:linear-gradient(135deg,#111e38,#1a2f5e);
+      display:flex; align-items:center; justify-content:center; font-size:3rem;
+    }
+    .book-info { padding:10px 12px 12px; }
+    .book-title {
+      font-weight:700; font-size:0.88rem; color:var(--color-cream); line-height:1.3;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    }
+    .book-author { font-size:0.78rem; color:var(--color-muted); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .book-status {
+      margin-top:7px; display:inline-block; font-size:0.7rem;
+      padding:2px 8px; border-radius:var(--radius-full); font-weight:700;
+    }
+    .status-toread  { background:rgba(91,158,245,0.15); color:#aad4ff; }
+    .status-reading { background:rgba(245,166,35,0.15); color:var(--color-amber-light); }
+    .status-done    { background:rgba(76,170,110,0.15); color:#90ffc0; }
+
+    .empty-state { grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--color-muted); }
+    .empty-state .owl { font-size:4rem; margin-bottom:16px; opacity:0.5; }
+    .empty-state p { font-style:italic; font-size:1.05rem; }
+
+    /* Modal */
+    .modal-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:999;
+      display:flex; align-items:center; justify-content:center; padding:20px;
+      opacity:0; pointer-events:none; transition:opacity .25s; backdrop-filter:blur(6px);
+    }
+    .modal-overlay.is-visible { opacity:1; pointer-events:auto; }
+    .modal {
+      width:100%; max-width:460px; background:#0d1528;
+      border:1px solid rgba(245,166,35,0.2); border-radius:var(--radius-xl);
+      padding:28px 24px; display:flex; flex-direction:column; gap:14px;
+      box-shadow:0 40px 80px rgba(0,0,0,0.6);
+      transform:translateY(20px); transition:transform .3s cubic-bezier(0.34,1.56,0.64,1);
+      max-height:90vh; overflow-y:auto;
+    }
+    .modal-overlay.is-visible .modal { transform:translateY(0); }
+    .modal-title { font-family:var(--font-display); font-size:1.4rem; color:var(--color-amber); }
+    .modal-label {
+      font-size:0.75rem; font-weight:700; color:var(--color-muted);
+      text-transform:uppercase; letter-spacing:0.07em; margin-bottom:5px; display:block;
+    }
+    .modal-input, .modal-select {
+      width:100%; padding:11px 14px;
+      background:rgba(0,0,0,0.4); border:1.5px solid var(--glass-border);
+      border-radius:var(--radius-md); color:var(--color-cream);
+      font-size:0.93rem; outline:none; -webkit-appearance:none; transition:border-color .2s;
+    }
+    .modal-input::placeholder { color:var(--color-muted); }
+    .modal-input:focus, .modal-select:focus { border-color:rgba(245,166,35,0.5); }
+    .modal-select option { background:#0d1528; }
+
+    /* Cover upload */
+    .cover-upload-area {
+      display:flex; flex-direction:column; gap:8px;
+    }
+    .cover-preview-wrap {
+      position:relative; width:100%; height:160px;
+      background:rgba(0,0,0,0.3); border:1.5px dashed var(--glass-border);
+      border-radius:var(--radius-md); overflow:hidden;
+      display:flex; align-items:center; justify-content:center;
+      transition:border-color .2s;
+    }
+    .cover-preview-wrap:hover { border-color:rgba(245,166,35,0.4); }
+    .cover-preview-img {
+      width:100%; height:100%; object-fit:cover;
+      display:none;
+    }
+    .cover-preview-img.has-image { display:block; }
+    .cover-placeholder-text {
+      display:flex; flex-direction:column; align-items:center; gap:6px;
+      color:var(--color-muted); font-size:0.85rem;
+    }
+    .cover-placeholder-text span { font-size:2rem; }
+    .cover-placeholder-text.hidden { display:none; }
+
+    .cover-btn-row { display:flex; gap:8px; }
+    .btn-cover-source {
+      flex:1; padding:9px 10px;
+      background:var(--glass-bg); border:1px solid var(--glass-border);
+      border-radius:var(--radius-md); color:var(--color-cream);
+      font-size:0.82rem; font-weight:600; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; gap:5px;
+      transition:border-color .2s, background .2s;
+    }
+    .btn-cover-source:hover { border-color:rgba(245,166,35,0.4); background:var(--glass-bg-hover); }
+    .btn-cover-remove {
+      padding:9px 12px; background:none;
+      border:1px solid rgba(224,85,85,0.3); border-radius:var(--radius-md);
+      color:#ff9898; font-size:0.82rem; cursor:pointer; display:none;
+      transition:background .2s;
+    }
+    .btn-cover-remove.visible { display:block; }
+    .btn-cover-remove:hover { background:rgba(224,85,85,0.1); }
+
+    .cover-url-toggle {
+      background:none; border:none; color:var(--color-muted);
+      font-size:0.78rem; cursor:pointer; text-decoration:underline;
+      text-align:left; padding:0; transition:color .2s;
+    }
+    .cover-url-toggle:hover { color:var(--color-amber-light); }
+    .cover-url-wrap { display:none; }
+    .cover-url-wrap.visible { display:block; }
+
+    .modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:4px; }
+    .btn-cancel { background:none; border:none; color:var(--color-muted); font-size:0.9rem; cursor:pointer; padding:8px 14px; }
+    .btn-save {
+      background:linear-gradient(135deg,var(--color-amber),var(--color-orange));
+      border:none; padding:10px 22px; border-radius:var(--radius-md);
+      font-weight:800; font-size:0.93rem; color:#1a0d00; cursor:pointer;
+      transition:opacity .15s,transform .15s;
+    }
+    .btn-save:disabled { opacity:0.5; cursor:not-allowed; }
+
+    /* Upload progress */
+    .upload-progress {
+      display:none; align-items:center; gap:8px;
+      font-size:0.82rem; color:var(--color-muted);
+    }
+    .upload-progress.visible { display:flex; }
+    .upload-spinner {
+      width:14px; height:14px; border:2px solid rgba(245,166,35,0.2);
+      border-top-color:var(--color-amber); border-radius:50%;
+      animation:spin .6s linear infinite; flex-shrink:0;
+    }
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    /* Drawer */
+    .drawer-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:998;
+      opacity:0; pointer-events:none; transition:opacity .3s; backdrop-filter:blur(4px);
+    }
+    .drawer-overlay.is-visible { opacity:1; pointer-events:auto; }
+    .drawer {
+      position:fixed; top:0; right:0; bottom:0; width:min(520px,100vw);
+      background:#0a1020; border-left:1px solid rgba(245,166,35,0.2);
+      z-index:999; display:flex; flex-direction:column;
+      transform:translateX(100%); transition:transform .35s cubic-bezier(0.4,0,0.2,1);
+      box-shadow:-20px 0 60px rgba(0,0,0,0.5);
+    }
+    .drawer.is-open { transform:translateX(0); }
+    .drawer-header {
+      padding:20px 24px; border-bottom:1px solid rgba(245,166,35,0.15);
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-shrink:0;
+    }
+    .drawer-book-info { flex:1; }
+    .drawer-book-title { font-family:var(--font-display); font-size:1.2rem; color:var(--color-amber); line-height:1.2; }
+    .drawer-book-author { font-size:0.82rem; color:var(--color-muted); margin-top:2px; }
+
+    /* Status selector nel drawer */
+    .drawer-status-row {
+      display:flex; align-items:center; gap:8px; margin-top:10px; flex-wrap:wrap;
+    }
+    .status-btn {
+      padding:4px 12px; border-radius:var(--radius-full);
+      border:1px solid transparent; font-size:0.75rem; font-weight:700;
+      cursor:pointer; transition:all .15s; background:rgba(255,255,255,0.04);
+      color:var(--color-muted);
+    }
+    .status-btn[data-status="toread"]  { border-color:rgba(91,158,245,0.3); }
+    .status-btn[data-status="reading"] { border-color:rgba(245,166,35,0.3); }
+    .status-btn[data-status="done"]    { border-color:rgba(76,170,110,0.3); }
+    .status-btn.active[data-status="toread"]  { background:rgba(91,158,245,0.15); color:#aad4ff; border-color:rgba(91,158,245,0.5); }
+    .status-btn.active[data-status="reading"] { background:rgba(245,166,35,0.15); color:var(--color-amber-light); border-color:rgba(245,166,35,0.5); }
+    .status-btn.active[data-status="done"]    { background:rgba(76,170,110,0.15); color:#90ffc0; border-color:rgba(76,170,110,0.5); }
+
+    .drawer-close {
+      background:none; border:none; color:var(--color-muted);
+      font-size:1.4rem; cursor:pointer; line-height:1; flex-shrink:0; transition:color .15s;
+    }
+    .drawer-close:hover { color:var(--color-cream); }
+    .drawer-body { flex:1; overflow-y:auto; padding:20px 24px; display:flex; flex-direction:column; gap:16px; }
+
+    /* Note */
+    .note-card {
+      background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
+      border-radius:var(--radius-lg); overflow:hidden; animation:cardIn .2s ease both;
+    }
+    .note-card-header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.06);
+    }
+    .note-card-title { font-weight:700; font-size:0.88rem; color:var(--color-cream); }
+    .note-card-date { font-size:0.72rem; color:var(--color-muted); margin-top:2px; }
+    .note-card-body { padding:12px 16px; font-size:0.85rem; color:#c8bfa8; line-height:1.7; }
+    .note-card-body p { margin:0 0 6px; }
+    .note-card-body p:last-child { margin-bottom:0; }
+    .note-card-actions { display:flex; gap:4px; }
+    .btn-note-action {
+      background:none; border:none; cursor:pointer; padding:3px 7px;
+      border-radius:4px; font-size:0.78rem; color:var(--color-muted); transition:all .15s;
+    }
+    .btn-note-action.edit:hover  { color:var(--color-amber-light); background:rgba(245,166,35,0.1); }
+    .btn-note-action.del:hover   { color:#ff9898; background:rgba(224,85,85,0.1); }
+    .note-empty { text-align:center; padding:32px 20px; color:var(--color-muted); font-style:italic; font-size:0.9rem; }
+
+    /* Editor */
+    .note-editor-wrap {
+      background:#0d1528; border:1px solid rgba(245,166,35,0.2);
+      border-radius:var(--radius-lg); overflow:hidden; flex-shrink:0;
+    }
+    .note-editor-top { padding:12px 16px 0; display:flex; flex-direction:column; gap:10px; }
+    .note-title-input {
+      background:none; border:none; border-bottom:1px solid rgba(255,255,255,0.08);
+      color:var(--color-cream); font-size:0.95rem; font-weight:700;
+      padding:0 0 8px; outline:none; width:100%;
+    }
+    .note-title-input::placeholder { color:var(--color-muted); font-weight:400; }
+    .ql-toolbar.ql-snow {
+      border:none !important; border-top:1px solid rgba(255,255,255,0.08) !important;
+      background:rgba(0,0,0,0.2); padding:6px 8px !important;
+    }
+    .ql-toolbar .ql-stroke { stroke:#7a8baa !important; }
+    .ql-toolbar .ql-fill   { fill:#7a8baa !important; }
+    .ql-toolbar button:hover .ql-stroke { stroke:var(--color-amber) !important; }
+    .ql-toolbar button:hover .ql-fill   { fill:var(--color-amber) !important; }
+    .ql-toolbar .ql-active .ql-stroke   { stroke:var(--color-amber) !important; }
+    .ql-toolbar .ql-active .ql-fill     { fill:var(--color-amber) !important; }
+    .ql-toolbar .ql-picker-label        { color:#7a8baa !important; }
+    .ql-container.ql-snow { border:none !important; font-family:var(--font-body); }
+    .ql-editor { color:var(--color-cream) !important; font-size:0.9rem; line-height:1.7; min-height:120px; max-height:220px; overflow-y:auto; }
+    .ql-editor.ql-blank::before { color:var(--color-muted) !important; font-style:italic; }
+    .note-editor-footer {
+      padding:10px 16px; display:flex; justify-content:space-between; align-items:center;
+      border-top:1px solid rgba(255,255,255,0.06);
+    }
+    .note-editing-label { font-size:0.78rem; color:var(--color-amber-light); display:none; }
+    .note-editing-label.visible { display:block; }
+    .btn-note-cancel-edit {
+      background:none; border:none; color:var(--color-muted);
+      font-size:0.8rem; cursor:pointer; display:none;
+    }
+    .btn-note-cancel-edit.visible { display:block; }
+    .btn-note-save {
+      background:linear-gradient(135deg,var(--color-amber),var(--color-orange));
+      border:none; padding:8px 18px; border-radius:var(--radius-md);
+      color:#1a0d00; font-weight:800; font-size:0.85rem; cursor:pointer;
+      transition:opacity .15s,transform .15s;
+    }
+    .btn-note-save:active { transform:scale(0.97); opacity:0.9; }
+
+    /* Toast */
+    .toast {
+      position:fixed; bottom:24px; right:24px; transform:translateY(120px);
+      display:flex; align-items:flex-end; z-index:9999; pointer-events:none;
+      transition:transform .4s cubic-bezier(0.34,1.56,0.64,1); max-width:320px;
+    }
+    .toast.is-visible { transform:translateY(0); }
+    .toast__owl {
+      width:80px; height:80px; object-fit:contain; mix-blend-mode:lighten; flex-shrink:0;
+      animation:owlBounce .5s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes owlBounce { from{transform:translateY(20px) scale(0.8);opacity:0} to{transform:translateY(0) scale(1);opacity:1} }
+    .toast__bubble {
+      position:relative; background:#0d1528; border:1.5px solid var(--glass-border);
+      border-radius:18px 18px 18px 4px; padding:12px 16px;
+      font-size:0.88rem; font-weight:600; line-height:1.45;
+      box-shadow:0 8px 28px rgba(0,0,0,0.5); margin-bottom:16px; margin-left:-4px; max-width:220px;
+    }
+    .toast__bubble::after {
+      content:''; position:absolute; bottom:-1px; left:-10px;
+      width:14px; height:14px; background:#0d1528;
+      border-left:1.5px solid var(--glass-border); border-bottom:1.5px solid var(--glass-border);
+      border-radius:0 0 0 8px; clip-path:polygon(100% 0,100% 100%,0 100%);
+    }
+    .toast--error   .toast__bubble { border-color:rgba(224,85,85,0.5);  color:#ff9898; }
+    .toast--success .toast__bubble { border-color:rgba(76,170,110,0.5); color:#90ffc0; }
+    .toast--info    .toast__bubble { border-color:rgba(91,158,245,0.5); color:#aad4ff; }
+    .toast--error   .toast__bubble::after { border-color:rgba(224,85,85,0.5); }
+    .toast--success .toast__bubble::after { border-color:rgba(76,170,110,0.5); }
+    .toast--info    .toast__bubble::after { border-color:rgba(91,158,245,0.5); }
+  </style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<div class="toast"  id="toast"></div>
+
+<div class="page">
+  <div class="header">
+    <div class="header-logo">
+      <img src="./src/assets/logo.png" alt="BookHawl">
+      <div class="header-title"><span class="book">Book</span><span class="hawl">Hawl</span></div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-add" id="btn-add-book">＋ Aggiungi libro</button>
+      <button class="btn-logout" id="btn-logout">Esci</button>
+    </div>
+  </div>
+
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="search" class="search-input" placeholder="Cerca per titolo o autore...">
+  </div>
+
+  <div class="stats" id="stats"></div>
+  <div class="books-grid" id="books-grid"></div>
+</div>
+
+<!-- Modal nuovo libro -->
+<div class="modal-overlay" id="modal-book">
+  <div class="modal">
+    <div class="modal-title">📖 Nuovo libro</div>
+
+    <div>
+      <label class="modal-label">Titolo *</label>
+      <input class="modal-input" id="book-title" placeholder="Il nome della rosa">
+    </div>
+    <div>
+      <label class="modal-label">Autore</label>
+      <input class="modal-input" id="book-author" placeholder="Umberto Eco">
+    </div>
+
+    <!-- Cover upload -->
+    <div>
+      <label class="modal-label">Copertina</label>
+      <div class="cover-upload-area">
+        <div class="cover-preview-wrap" id="cover-preview-wrap">
+          <img class="cover-preview-img" id="cover-preview-img" alt="Anteprima copertina">
+          <div class="cover-placeholder-text" id="cover-placeholder-text">
+            <span>📷</span>
+            <span>Nessuna copertina</span>
+          </div>
+        </div>
+        <div class="cover-btn-row">
+          <button type="button" class="btn-cover-source" id="btn-from-camera">📷 Fotocamera</button>
+          <button type="button" class="btn-cover-source" id="btn-from-gallery">🖼️ Galleria</button>
+          <button type="button" class="btn-cover-remove" id="btn-cover-remove">✕ Rimuovi</button>
+        </div>
+        <button type="button" class="cover-url-toggle" id="cover-url-toggle">Oppure inserisci URL →</button>
+        <div class="cover-url-wrap" id="cover-url-wrap">
+          <input class="modal-input" id="book-cover-url" placeholder="https://...">
+        </div>
+        <div class="upload-progress" id="upload-progress">
+          <div class="upload-spinner"></div>
+          <span>Caricamento immagine...</span>
+        </div>
+      </div>
+      <!-- Input file nascosti -->
+      <input type="file" id="input-camera"  accept="image/*" capture="environment" style="display:none">
+      <input type="file" id="input-gallery" accept="image/*" style="display:none">
+    </div>
+
+    <div>
+      <label class="modal-label">Stato</label>
+      <select class="modal-select" id="book-status">
+        <option value="toread">📚 Da leggere</option>
+        <option value="reading">✍️ In lettura</option>
+        <option value="done">✅ Letto</option>
+      </select>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" id="btn-cancel-book">Annulla</button>
+      <button class="btn-save"   id="btn-save-book">Salva libro</button>
+    </div>
+  </div>
+</div>
+
+<!-- Drawer note -->
+<div class="drawer-overlay" id="drawer-overlay"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div class="drawer-book-info">
+      <div class="drawer-book-title"  id="drawer-title">—</div>
+      <div class="drawer-book-author" id="drawer-author"></div>
+      <div class="drawer-status-row" id="drawer-status-row">
+        <button class="status-btn" data-status="toread">📚 Da leggere</button>
+        <button class="status-btn" data-status="reading">✍️ In lettura</button>
+        <button class="status-btn" data-status="done">✅ Letto</button>
+      </div>
+    </div>
+    <button class="drawer-close" id="drawer-close">✕</button>
+  </div>
+  <div class="drawer-body" id="drawer-body">
+    <div id="notes-list"></div>
+    <div class="note-editor-wrap">
+      <div class="note-editor-top">
+        <input class="note-title-input" id="note-title" placeholder="Titolo nota (opzionale)">
+      </div>
+      <div id="quill-editor"></div>
+      <div class="note-editor-footer">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="note-editing-label" id="note-editing-label">✏️ Modifica in corso</span>
+          <button class="btn-note-cancel-edit" id="btn-cancel-edit">Annulla</button>
+        </div>
+        <button class="btn-note-save" id="btn-save-note">Salva nota</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js"></script>
+<script type="module">
+  import { supabase }      from './src/lib/supabase.js'
+  import { signOut }       from './src/lib/auth.js'
+  import { generateStars } from './src/components/Stars.js'
+  import owlOk from './src/assets/owl-ok.png'
+  import owlKo from './src/assets/owl-ko.png'
+
+  // ── Stars ──
+  generateStars(document.getElementById('stars'), 70)
+
+  // ── Toast ──
+  const toastEl = document.getElementById('toast')
+  let toastTimer = null
+  function showToast(msg, type = 'info', duration = 3500) {
+    if (toastTimer) clearTimeout(toastTimer)
+    const owl = type === 'error' ? owlKo : owlOk
+    toastEl.className = `toast toast--${type}`
+    toastEl.innerHTML = `<img class="toast__owl" src="${owl}" alt=""><div class="toast__bubble">${msg}</div>`
+    void toastEl.offsetWidth
+    toastEl.classList.add('is-visible')
+    toastTimer = setTimeout(() => toastEl.classList.remove('is-visible'), duration)
+  }
+
+  // ── Quill ──
+  const quill = new Quill('#quill-editor', {
+    theme: 'snow',
+    placeholder: 'Scrivi la tua nota...',
+    modules: {
+      toolbar: [
+        ['bold','italic','underline','strike'],
+        [{ list:'ordered' },{ list:'bullet' }],
+        ['blockquote'],
+        [{ header:[1,2,false] }],
+        ['clean']
+      ]
+    }
+  })
+
+  // ── State ──
+  let currentUser = null
+  let currentBook = null
+  let editingNoteId = null
+  let pendingCoverFile = null
+  let pendingCoverUrl  = null
+
+  // ── Auth ──
+  async function init() {
+    const { data:{ session } } = await supabase.auth.getSession()
+    if (!session) { window.location.replace('/'); return }
+    currentUser = session.user
+    loadBooks()
+    document.getElementById('btn-logout').addEventListener('click', async () => {
+      await signOut(); window.location.replace('/')
+    })
+  }
+
+  // ── Books ──
+  let allBooks = []
+  const grid = document.getElementById('books-grid')
+
+  async function loadBooks() {
+    const { data, error } = await supabase
+            .from('books').select('*').order('created_at', { ascending:false })
+    if (error) { showToast('Errore caricamento libri', 'error'); return }
+    allBooks = data || []
+    renderStats(); renderBooks(allBooks)
+  }
+
+  const statusLabel = { toread:'📚 Da leggere', reading:'✍️ In lettura', done:'✅ Letto' }
+  const statusClass = { toread:'status-toread', reading:'status-reading', done:'status-done' }
+
+  function renderBooks(data) {
+    grid.innerHTML = ''
+    if (!data.length) {
+      grid.innerHTML = `<div class="empty-state"><div class="owl">🦉</div><p>La tua libreria è vuota.<br>Aggiungi il primo libro!</p></div>`
+      return
+    }
+    data.forEach((book, i) => {
+      const card = document.createElement('div')
+      card.className = 'book-card'
+      card.style.animationDelay = `${i * 0.05}s`
+      const cover = book.cover_url
+              ? `<img src="${book.cover_url}" class="book-cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+              : ''
+      const ph = `<div class="book-cover-placeholder" style="${book.cover_url?'display:none':''}">📖</div>`
+      const st = book.status ? `<span class="book-status ${statusClass[book.status]}">${statusLabel[book.status]}</span>` : ''
+      card.innerHTML = `${cover}${ph}<div class="book-info"><div class="book-title">${esc(book.title)}</div><div class="book-author">${esc(book.author||'')}</div>${st}</div>`
+      card.addEventListener('click', () => openDrawer(book))
+      grid.appendChild(card)
+    })
+  }
+
+  function renderStats() {
+    const t=allBooks.length, r=allBooks.filter(b=>b.status==='reading').length
+    const d=allBooks.filter(b=>b.status==='done').length, tr=allBooks.filter(b=>b.status==='toread').length
+    document.getElementById('stats').innerHTML = `
+        <div class="stat-pill"><strong>${t}</strong> libri</div>
+        <div class="stat-pill"><strong>${tr}</strong> da leggere</div>
+        <div class="stat-pill"><strong>${r}</strong> in lettura</div>
+        <div class="stat-pill"><strong>${d}</strong> letti</div>`
+  }
+
+  document.getElementById('search').addEventListener('input', e => {
+    const term = e.target.value.toLowerCase()
+    renderBooks(allBooks.filter(b =>
+            b.title.toLowerCase().includes(term) ||
+            (b.author && b.author.toLowerCase().includes(term))
+    ))
+  })
+
+  // ── Cover upload ──
+  function setCoverPreview(src) {
+    const img = document.getElementById('cover-preview-img')
+    const ph  = document.getElementById('cover-placeholder-text')
+    const rem = document.getElementById('btn-cover-remove')
+    img.src = src
+    img.classList.add('has-image')
+    ph.classList.add('hidden')
+    rem.classList.add('visible')
+  }
+
+  function clearCoverPreview() {
+    const img = document.getElementById('cover-preview-img')
+    const ph  = document.getElementById('cover-placeholder-text')
+    const rem = document.getElementById('btn-cover-remove')
+    img.src = ''; img.classList.remove('has-image')
+    ph.classList.remove('hidden'); rem.classList.remove('visible')
+    pendingCoverFile = null; pendingCoverUrl = null
+    document.getElementById('book-cover-url').value = ''
+  }
+
+  function handleFileSelect(file) {
+    if (!file) return
+    pendingCoverFile = file
+    pendingCoverUrl  = null
+    document.getElementById('book-cover-url').value = ''
+    const reader = new FileReader()
+    reader.onload = e => setCoverPreview(e.target.result)
+    reader.readAsDataURL(file)
+  }
+
+  document.getElementById('btn-from-camera').addEventListener('click', () =>
+          document.getElementById('input-camera').click())
+  document.getElementById('btn-from-gallery').addEventListener('click', () =>
+          document.getElementById('input-gallery').click())
+  document.getElementById('input-camera').addEventListener('change',  e => handleFileSelect(e.target.files[0]))
+  document.getElementById('input-gallery').addEventListener('change', e => handleFileSelect(e.target.files[0]))
+  document.getElementById('btn-cover-remove').addEventListener('click', clearCoverPreview)
+
+  document.getElementById('cover-url-toggle').addEventListener('click', () => {
+    document.getElementById('cover-url-wrap').classList.toggle('visible')
+  })
+  document.getElementById('book-cover-url').addEventListener('input', e => {
+    const url = e.target.value.trim()
+    if (url) { pendingCoverUrl = url; pendingCoverFile = null; setCoverPreview(url) }
+    else clearCoverPreview()
+  })
+
+  async function uploadCover(file) {
+    const progress = document.getElementById('upload-progress')
+    progress.classList.add('visible')
+    const ext  = file.name.split('.').pop()
+    const path = `${currentUser.id}/${Date.now()}.${ext}`
+    const { error } = await supabase.storage.from('covers').upload(path, file, { upsert:true })
+    progress.classList.remove('visible')
+    if (error) throw error
+    const { data } = supabase.storage.from('covers').getPublicUrl(path)
+    return data.publicUrl
+  }
+
+  // ── Modal libro ──
+  const modalBook = document.getElementById('modal-book')
+  document.getElementById('btn-add-book').addEventListener('click',   () => modalBook.classList.add('is-visible'))
+  document.getElementById('btn-cancel-book').addEventListener('click', closeModalBook)
+  modalBook.addEventListener('click', e => { if (e.target === modalBook) closeModalBook() })
+
+  function closeModalBook() {
+    modalBook.classList.remove('is-visible')
+    ;['book-title','book-author'].forEach(id => document.getElementById(id).value = '')
+    document.getElementById('book-status').value = 'toread'
+    clearCoverPreview()
+    document.getElementById('cover-url-wrap').classList.remove('visible')
+    document.getElementById('input-camera').value  = ''
+    document.getElementById('input-gallery').value = ''
+  }
+
+  document.getElementById('btn-save-book').addEventListener('click', async () => {
+    const title = document.getElementById('book-title').value.trim()
+    if (!title) { showToast('Inserisci almeno il titolo! 📖', 'error'); return }
+
+    const btn = document.getElementById('btn-save-book')
+    btn.disabled = true
+
+    let coverUrl = null
+    try {
+      if (pendingCoverFile) {
+        coverUrl = await uploadCover(pendingCoverFile)
+      } else if (pendingCoverUrl) {
+        coverUrl = pendingCoverUrl
+      }
+    } catch(e) {
+      showToast('Errore upload copertina 😕', 'error')
+      btn.disabled = false; return
+    }
+
+    const { error } = await supabase.from('books').insert({
+      title,
+      author:    document.getElementById('book-author').value.trim() || null,
+      cover_url: coverUrl,
+      status:    document.getElementById('book-status').value,
+      user_id:   currentUser.id
+    })
+    btn.disabled = false
+    if (error) { showToast('Errore nel salvataggio 😕', 'error'); return }
+    showToast('Libro aggiunto! 🦉', 'success')
+    closeModalBook(); loadBooks()
+  })
+
+  // ── Drawer ──
+  const drawer        = document.getElementById('drawer')
+  const drawerOverlay = document.getElementById('drawer-overlay')
+
+  function openDrawer(book) {
+    currentBook   = book
+    editingNoteId = null
+    document.getElementById('drawer-title').textContent  = book.title
+    document.getElementById('drawer-author').textContent = book.author || ''
+    document.getElementById('note-title').value = ''
+    quill.setContents([])
+    resetNoteEditor()
+    // Stato corrente
+    document.querySelectorAll('.status-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.status === book.status)
+    })
+    drawer.classList.add('is-open')
+    drawerOverlay.classList.add('is-visible')
+    loadNotes(book.id)
+  }
+
+  function closeDrawer() {
+    drawer.classList.remove('is-open')
+    drawerOverlay.classList.remove('is-visible')
+    currentBook = null; editingNoteId = null
+  }
+
+  document.getElementById('drawer-close').addEventListener('click', closeDrawer)
+  drawerOverlay.addEventListener('click', closeDrawer)
+
+  // Cambio stato dal drawer
+  document.querySelectorAll('.status-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!currentBook) return
+      const newStatus = btn.dataset.status
+      const { error } = await supabase
+              .from('books').update({ status:newStatus }).eq('id', currentBook.id)
+      if (error) { showToast('Errore aggiornamento stato', 'error'); return }
+      currentBook.status = newStatus
+      document.querySelectorAll('.status-btn').forEach(b =>
+              b.classList.toggle('active', b.dataset.status === newStatus))
+      // Aggiorna anche la card nella griglia
+      const idx = allBooks.findIndex(b => b.id === currentBook.id)
+      if (idx !== -1) { allBooks[idx].status = newStatus; renderStats(); renderBooks(allBooks) }
+      showToast('Stato aggiornato! ✅', 'success')
+    })
+  })
+
+  // ── Note ──
+  async function loadNotes(bookId) {
+    const list = document.getElementById('notes-list')
+    list.innerHTML = '<div class="note-empty">Caricamento...</div>'
+    const { data, error } = await supabase
+            .from('notes').select('*')
+            .eq('book_id', bookId).order('created_at', { ascending:false })
+    if (error) { list.innerHTML=''; showToast('Errore caricamento note','error'); return }
+    renderNotes(data || [])
+  }
+
+  function renderNotes(notes) {
+    const list = document.getElementById('notes-list')
+    if (!notes.length) {
+      list.innerHTML = '<div class="note-empty">🦉 Nessuna nota ancora.<br>Scrivi la prima qui sotto!</div>'
+      return
+    }
+    list.innerHTML = ''
+    notes.forEach(note => {
+      const div = document.createElement('div')
+      div.className = 'note-card'
+      const date = new Date(note.created_at).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'})
+      div.innerHTML = `
+          <div class="note-card-header">
+            <div>
+              <div class="note-card-title">${esc(note.title||'Nota senza titolo')}</div>
+              <div class="note-card-date">${date}</div>
+            </div>
+            <div class="note-card-actions">
+              <button class="btn-note-action edit" data-id="${note.id}">✏️</button>
+              <button class="btn-note-action del"  data-id="${note.id}">🗑️</button>
+            </div>
+          </div>
+          <div class="note-card-body">${note.content||''}</div>`
+      div.querySelector('.btn-note-action.edit').addEventListener('click', () => editNote(note))
+      div.querySelector('.btn-note-action.del').addEventListener('click',  () => deleteNote(note.id))
+      list.appendChild(div)
+    })
+  }
+
+  function editNote(note) {
+    editingNoteId = note.id
+    document.getElementById('note-title').value = note.title || ''
+    quill.clipboard.dangerouslyPasteHTML(note.content || '')
+    document.getElementById('note-editing-label').classList.add('visible')
+    document.getElementById('btn-cancel-edit').classList.add('visible')
+    document.getElementById('btn-save-note').textContent = 'Aggiorna'
+    document.getElementById('quill-editor').scrollIntoView({ behavior:'smooth', block:'center' })
+  }
+
+  function resetNoteEditor() {
+    editingNoteId = null
+    document.getElementById('note-title').value = ''
+    quill.setContents([])
+    document.getElementById('note-editing-label').classList.remove('visible')
+    document.getElementById('btn-cancel-edit').classList.remove('visible')
+    document.getElementById('btn-save-note').textContent = 'Salva nota'
+  }
+
+  document.getElementById('btn-cancel-edit').addEventListener('click', resetNoteEditor)
+
+  async function deleteNote(id) {
+    const { error } = await supabase.from('notes').delete().eq('id', id)
+    if (error) { showToast('Errore eliminazione','error'); return }
+    showToast('Nota eliminata','info')
+    loadNotes(currentBook.id)
+  }
+
+  document.getElementById('btn-save-note').addEventListener('click', async () => {
+    const isEmpty = quill.getText().trim().length === 0
+    if (isEmpty) { showToast('Scrivi qualcosa prima di salvare! ✏️','error'); return }
+
+    const payload = {
+      title:      document.getElementById('note-title').value.trim() || null,
+      content:    quill.root.innerHTML,
+      updated_at: new Date().toISOString()
+    }
+
+    let error
+    if (editingNoteId) {
+      ;({ error } = await supabase.from('notes').update(payload).eq('id', editingNoteId))
+    } else {
+      ;({ error } = await supabase.from('notes').insert({
+        ...payload, book_id:currentBook.id, user_id:currentUser.id
+      }))
+    }
+
+    if (error) { showToast('Errore salvataggio nota 😕','error'); return }
+    showToast(editingNoteId ? 'Nota aggiornata! ✏️' : 'Nota salvata! 🦉','success')
+    resetNoteEditor()
+    loadNotes(currentBook.id)
+  })
+
+  function esc(s) {
+    if (!s) return ''
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  }
+
+  init()
+</script>
+</body>
+</html>
