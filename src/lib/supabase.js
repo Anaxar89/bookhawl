@@ -14,3 +14,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true,
   }
 })
+
+/**
+ * Ritorna la base URL corretta in qualsiasi ambiente
+ * Locale:      http://localhost:3000
+ * Produzione:  https://www.bookhawl.it
+ */
+export function getBaseUrl() {
+  return window.location.origin
+}
