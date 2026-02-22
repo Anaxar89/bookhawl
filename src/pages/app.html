@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BookHawl — La mia libreria</title>
   <link rel="stylesheet" href="../styles/global.css">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
   <style>
     body {
       display: flex;
@@ -16,21 +17,39 @@
     }
     h1 { font-family: 'Fredoka One', cursive; color: #f5a623; font-size: 2rem; }
     p  { color: #7a8baa; }
+    .logout-btn {
+      margin-top: 16px;
+      padding: 10px 24px;
+      background: #f5a623;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
   </style>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <h1>🦉 BookHawl</h1>
-  <p>Sei loggato! La libreria è in arrivo...</p>
-  <button onclick="logout()" style="margin-top:16px; padding:10px 24px; background:#f5a623; border:none; border-radius:10px; font-weight:700; cursor:pointer;">Logout</button>
-  <script type="module">
-    import { getSession, signOut } from '../lib/auth.js'
+<h1>🦉 BookHawl</h1>
+<p>Sei loggato! La libreria è in arrivo...</p>
+<button class="logout-btn" id="btn-logout">Logout</button>
+
+<script type="module">
+  import { getSession, signOut } from '../lib/auth.js'
+
+  async function init() {
     const { session } = await getSession()
-    if (!session) window.location.href = '/src/pages/auth.html'
-    window.logout = async () => {
-      await signOut()
-      window.location.href = '/src/pages/auth.html'
+    if (!session) {
+      window.location.href = `${window.location.origin}/`
+      return
     }
-  </script>
+
+    document.getElementById('btn-logout').addEventListener('click', async () => {
+      await signOut()
+      window.location.href = `${window.location.origin}/`
+    })
+  }
+
+  init()
+</script>
 </body>
 </html>
