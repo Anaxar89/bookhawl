@@ -13,7 +13,7 @@ export async function signUpWithEmail(email, password, displayName) {
     password,
     options: {
       data: { display_name: displayName },
-      emailRedirectTo: `${window.location.origin}/bookhawl/auth-callback.html`
+      emailRedirectTo: `${window.location.origin}/auth-callback.html`
     }
   })
   return { data, error }
@@ -38,7 +38,7 @@ export async function signInWithGoogle() {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${window.location.origin}/bookhawl/auth-callback.html`
+      redirectTo: `${window.location.origin}/auth-callback.html`
     }
   })
   return { data, error }
@@ -52,7 +52,7 @@ export async function signInWithApple() {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'apple',
     options: {
-      redirectTo: `${window.location.origin}/bookhawl/auth-callback.html`
+      redirectTo: `${window.location.origin}/auth-callback.html`
     }
   })
   return { data, error }

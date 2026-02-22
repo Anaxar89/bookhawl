@@ -21,7 +21,7 @@ import {
 ;(async () => {
   const { session } = await getSession()
   if (session) {
-    window.location.href = '/bookhawl/app.html'
+    window.location.href = '/app.html'
   }
 })()
 
@@ -115,7 +115,7 @@ document.getElementById('form-login').addEventListener('submit', async (e) => {
   }
 
   showToast('Benvenuto! 🦉', 'success')
-  setTimeout(() => { window.location.href = '/bookhawl/app.html' }, 800)
+  setTimeout(() => { window.location.href = '/app.html' }, 800)
 })
 
 // ─────────────────────────────────────────────
